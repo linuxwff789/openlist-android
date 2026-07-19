@@ -29,6 +29,7 @@ import (
 	// Import drivers for their init() registration
 	_ "github.com/OpenListTeam/OpenList/v4/drivers/189"
 	_ "github.com/OpenListTeam/OpenList/v4/drivers/aliyundrive_open"
+	_ "github.com/OpenListTeam/OpenList/v4/drivers/base"
 	_ "github.com/OpenListTeam/OpenList/v4/drivers/webdav"
 
 	"github.com/OpenListTeam/OpenList/v4/internal/driver"
@@ -461,6 +462,7 @@ func initStorage(ctx context.Context, driverName, additionJSON string) (driver.D
 	if conf.Conf == nil {
 		conf.Conf = &conf.Config{TlsInsecureSkipVerify: false}
 	}
+	base.InitClient()
 	driverNew, err := op.GetDriver(driverName)
 	if err != nil {
 		return nil, fmt.Errorf("unknown driver %q: %w", driverName, err)

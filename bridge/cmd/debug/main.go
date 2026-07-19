@@ -28,6 +28,7 @@ import (
 	"github.com/OpenListTeam/OpenList/v4/drivers/189"
 	"github.com/OpenListTeam/OpenList/v4/drivers/189pc"
 	"github.com/OpenListTeam/OpenList/v4/drivers/aliyundrive_open"
+	"github.com/OpenListTeam/OpenList/v4/drivers/base"
 	"github.com/OpenListTeam/OpenList/v4/drivers/webdav"
 
 	"github.com/OpenListTeam/OpenList/v4/internal/driver"
@@ -81,6 +82,7 @@ func main() {
 	conf.Conf = &conf.Config{
 		TlsInsecureSkipVerify: false,
 	}
+	base.InitClient()
 	// Override DNS to avoid Android TUN VPN DNS breakage
 	net.DefaultResolver = &net.Resolver{
 		PreferGo: true,
