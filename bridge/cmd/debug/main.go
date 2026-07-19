@@ -163,6 +163,13 @@ func main() {
 }
 
 func rootObj(d driver.Driver) model.Obj {
+	// Use driver's GetRoot if available (e.g. AliyundriveOpen uses "root" not "/")
+	if getRooter, ok := d.(driver.GetRooter); ok {
+		root, err := getRooter.GetRoot(context.Background())
+		if err == nil {
+			return root
+		}
+	}
 	s := d.GetStorage()
 	return &model.Object{
 		ID:       s.MountPath,
