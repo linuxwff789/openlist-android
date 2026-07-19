@@ -36,38 +36,40 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 4 {
-		fmt.Fprintf(os.Stderr, `OpenList debug CLI — test drivers from terminal.
-
-Usage:
-  %s <driver> <config-json> <command> [args...]
-
-Drivers: webdav, 189Cloud, aliyundrive_open
-
-Commands:
-  list <path>                    List directory
-  get <path>                     Get file info
-  url <path>                     Get download URL
-  mkdir <parent> <name>          Create directory
-  delete <path>                  Delete file/dir
-  rename <path> <new-name>       Rename
-  move <src> <dst-dir>           Move
-  copy <src> <dst-dir>           Copy
-  upload <parent> <local-file>   Upload file
-  info                           Storage details
-
-Examples:
-  %s webdav '{"address":"https://webdav.me","username":"u","password":"p"}' list /
-  %s aliyundrive_open '{"refresh_token":"xxx"}' list /Photos
-`,
-			os.Args[0], os.Args[0], os.Args[0])
-		os.Exit(1)
+	if len(os.Args) < 2 {
+		showHelp()
 	}
 
-	driverName := os.Args[1]
-	configJSON := os.Args[2]
-	cmd := os.Args[3]
-	args := os.Args[4:]
+	// HACK: On some Android Go builds, os.Args[1] == os.Args[0] (binary path).
+	// Scan for first non-path argument that looks like a driver name.
+	driverName := ""
+	for _, a := range os.Args[1:] {
+		if !strings.HasPrefix(a, "/") && !strings.HasPrefix(a, ".") {
+			driverName = a
+			break
+		}
+	}
+	if driverName == "" {
+		fatalf("cannot find driver name in args: %v", os.Args)
+	}
+	// Rebuild remaining args after driver name
+	remaining := []string{}
+	found := false
+	for _, a := range os.Args[1:] {
+		if a == driverName && !found {
+			found = true
+			continue
+		}
+		if found {
+			remaining = append(remaining, a)
+		}
+	}
+	if len(remaining) < 2 {
+		showHelp()
+	}
+	configJSON := remaining[0]
+	cmd := remaining[1]
+	args := remaining[2:]
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -435,5 +437,33 @@ func runInfo(ctx context.Context, d driver.Driver) {
 
 func fatalf(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "ERROR: "+format+"\n", args...)
+	os.Exit(1)
+}
+
+func showHelp() {
+	fmt.Fprintf(os.Stderr, `OpenList debug CLI — test drivers from terminal.
+
+Usage:
+  %s <driver> <config-json> <command> [args...]
+
+Drivers: webdav, 189Cloud, aliyundrive_open
+
+Commands:
+  list <path>                    List directory
+  get <path>                     Get file info
+  url <path>                     Get download URL
+  mkdir <parent> <name>          Create directory
+  delete <path>                  Delete file/dir
+  rename <path> <new-name>       Rename
+  move <src> <dst-dir>           Move
+  copy <src> <dst-dir>           Copy
+  upload <parent> <local-file>   Upload file
+  info                           Storage details
+
+Examples:
+  %s webdav '{"address":"https://webdav.me","username":"u","password":"p"}' list /
+  %s aliyundrive_open '{"refresh_token":"xxx"}' list /Photos
+`,
+		os.Args[0], os.Args[0], os.Args[0])
 	os.Exit(1)
 }
