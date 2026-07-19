@@ -33,6 +33,7 @@ import (
 
 	"github.com/OpenListTeam/OpenList/v4/internal/driver"
 	"github.com/OpenListTeam/OpenList/v4/internal/errs"
+	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/stream"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
@@ -456,6 +457,10 @@ func Java_com_openlist_bridge_OpenListDriver_nDestroy(env *C.JNIEnv, clazz C.jcl
 // ---- internal helpers ----
 
 func initStorage(ctx context.Context, driverName, additionJSON string) (driver.Driver, error) {
+	// Initialize minimal config for drivers/base HTTP client
+	if conf.Conf == nil {
+		conf.Conf = &conf.Config{TlsInsecureSkipVerify: false}
+	}
 	driverNew, err := op.GetDriver(driverName)
 	if err != nil {
 		return nil, fmt.Errorf("unknown driver %q: %w", driverName, err)

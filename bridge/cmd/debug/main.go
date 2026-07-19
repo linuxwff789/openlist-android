@@ -30,6 +30,7 @@ import (
 
 	"github.com/OpenListTeam/OpenList/v4/internal/driver"
 	"github.com/OpenListTeam/OpenList/v4/internal/errs"
+	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/stream"
 	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
@@ -73,6 +74,11 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
+
+	// Initialize minimal config — needed by drivers/base for HTTP client
+	conf.Conf = &conf.Config{
+		TlsInsecureSkipVerify: false,
+	}
 
 	var drv driver.Driver
 	storage := model.Storage{
