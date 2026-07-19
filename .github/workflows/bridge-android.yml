@@ -1,25 +1,11 @@
 name: Build Android .so (OpenList Bridge)
 
-'on':
+on:
   push:
     branches: ["main"]
-    paths:
-      - "bridge/**"
-      - "drivers/webdav/**"
-      - "drivers/189/**"
-      - "drivers/aliyundrive_open/**"
-      - "internal/driver/**"
-      - "internal/model/**"
-      - "internal/op/**"
-      - "internal/errs/**"
-      - "internal/stream/**"
-      - "internal/conf/**"
-      - "internal/cache/**"
-      - "internal/net/**"
-      - "pkg/**"
   pull_request:
     paths:
-      - "bridge/**"
+      - 'bridge/**'
   workflow_dispatch:
 
 concurrency:

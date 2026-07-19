@@ -1,6 +1,6 @@
 name: Release Android .so
 
-'on':
+on:
   push:
     tags:
       - 'v*'
