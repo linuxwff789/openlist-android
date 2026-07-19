@@ -23,15 +23,14 @@ import (
 	"strings"
 	"time"
 
-	// Register drivers
-	_ "github.com/OpenListTeam/OpenList/v4/drivers/189"
-	_ "github.com/OpenListTeam/OpenList/v4/drivers/aliyundrive_open"
-	_ "github.com/OpenListTeam/OpenList/v4/drivers/webdav"
+	// Direct driver imports — no op.GetDriver, which breaks argv on Android
+	"github.com/OpenListTeam/OpenList/v4/drivers/189"
+	"github.com/OpenListTeam/OpenList/v4/drivers/aliyundrive_open"
+	"github.com/OpenListTeam/OpenList/v4/drivers/webdav"
 
 	"github.com/OpenListTeam/OpenList/v4/internal/driver"
 	"github.com/OpenListTeam/OpenList/v4/internal/errs"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
-	"github.com/OpenListTeam/OpenList/v4/internal/op"
 	"github.com/OpenListTeam/OpenList/v4/internal/stream"
 	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 )
@@ -73,17 +72,28 @@ Examples:
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	driverNew, err := op.GetDriver(driverName)
-	if err != nil {
-		fatalf("unknown driver %q: %v", driverName, err)
-	}
+	var drv driver.Driver
 	storage := model.Storage{
 		MountPath: "/",
 		Driver:    driverName,
 		Addition:  configJSON,
 		Modified:  time.Now(),
 	}
-	drv := driverNew()
+
+	switch driverName {
+	case "WebDav":
+		d := &webdav.WebDav{}
+		drv = d
+	case "189Cloud":
+		d := &_189.Cloud189{}
+		drv = d
+	case "AliyundriveOpen":
+		d := &aliyundrive_open.AliyundriveOpen{}
+		drv = d
+	default:
+		fatalf("unknown driver: %s (supported: WebDav, 189Cloud, AliyundriveOpen)", driverName)
+	}
+
 	drv.SetStorage(storage)
 	if err := utils.Json.UnmarshalFromString(configJSON, drv.GetAddition()); err != nil {
 		fatalf("bad config: %v", err)
