@@ -37,36 +37,21 @@ jobs:
           export GOOS=android GOARCH=arm64 CGO_ENABLED=0
           go build -ldflags="-s -w" -tags glebarez -o openlist-cli.arm64 ./bridge/cmd/debug/
 
-      - name: Package
-        run: |
-          mkdir -p release
-          cp libopenlist.so release/
-          cp openlist-cli.arm64 release/
-          cp bridge/OpenListBridge.kt release/
-          cd release
-          sha256sum * > checksums.txt
-          tar czf ../openlist-bridge-${{ github.ref_name }}.tar.gz .
-          echo "Package ready"
-
       - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: OpenList Bridge ${{ github.ref_name }}
-          body: |
-            ## OpenList Android Bridge ${{ github.ref_name }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "OpenList Bridge ${{ github.ref_name }}" \
+            --notes "## OpenList Android Bridge ${{ github.ref_name }}
 
             ### Files
-            - `libopenlist.so` — JNI native library (place in `jniLibs/arm64-v8a/`)
-            - `openlist-cli.arm64` — Termux debug CLI
-            - `OpenListBridge.kt` — Kotlin wrapper (add to your project)
-            - `checksums.txt` — SHA256 for verification
+            - \`libopenlist.so\` — JNI native library (place in \`jniLibs/arm64-v8a/\`)
+            - \`openlist-cli.arm64\` — Termux debug CLI
+            - \`OpenListBridge.kt\` — Kotlin wrapper (add to your project)
 
             ### Supported drivers
             - WebDAV
             - 189Cloud (天翼云)
-            - AliyunDrive Open (阿里云盘)
-          files: |
-            openlist-bridge-*.tar.gz
-            libopenlist.so
-            openlist-cli.arm64
-            bridge/OpenListBridge.kt
+            - AliyunDrive Open (阿里云盘)" \
+            libopenlist.so openlist-cli.arm64 bridge/OpenListBridge.kt
