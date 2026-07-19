@@ -40,7 +40,7 @@ import (
 	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 
 	"gorm.io/gorm"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 )
 
 func main() {
