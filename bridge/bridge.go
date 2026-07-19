@@ -3,6 +3,17 @@ package main
 /*
 #include <jni.h>
 #include <stdlib.h>
+
+// JNI helper wrappers — Go cgo cannot call (*env)->Method directly.
+static inline jstring _go_NewStringUTF(JNIEnv* env, const char* s) {
+    return (*env)->NewStringUTF(env, s);
+}
+static inline const char* _go_GetStringUTFChars(JNIEnv* env, jstring s, jboolean* isCopy) {
+    return (*env)->GetStringUTFChars(env, s, isCopy);
+}
+static inline void _go_ReleaseStringUTFChars(JNIEnv* env, jstring s, const char* c) {
+    (*env)->ReleaseStringUTFChars(env, s, c);
+}
 */
 import "C"
 
@@ -45,16 +56,16 @@ var (
 
 func jstring2go(env *C.JNIEnv, s C.jstring) string {
 	var isCopy C.jboolean
-	chars := (*C.JNIEnv).GetStringUTFChars(env, s, &isCopy)
+	chars := C._go_GetStringUTFChars(env, s, &isCopy)
 	if chars == nil {
 		return ""
 	}
-	defer (*C.JNIEnv).ReleaseStringUTFChars(env, s, chars)
+	defer C._go_ReleaseStringUTFChars(env, s, chars)
 	return C.GoString(chars)
 }
 
 func go2jstring(env *C.JNIEnv, s string) C.jstring {
-	return (*C.JNIEnv).NewStringUTF(env, C.CString(s))
+	return C._go_NewStringUTF(env, C.CString(s))
 }
 
 func jresult(env *C.JNIEnv, data interface{}) C.jstring {
