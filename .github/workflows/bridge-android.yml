@@ -1,0 +1,109 @@
+name: Build Android .so (OpenList Bridge)
+
+'on':
+  push:
+    branches: ["main"]
+    paths:
+      - "bridge/**"
+      - "drivers/webdav/**"
+      - "drivers/189/**"
+      - "drivers/aliyundrive_open/**"
+      - "internal/driver/**"
+      - "internal/model/**"
+      - "internal/op/**"
+      - "internal/errs/**"
+      - "internal/stream/**"
+      - "internal/conf/**"
+      - "internal/cache/**"
+      - "internal/net/**"
+      - "pkg/**"
+  pull_request:
+    paths:
+      - "bridge/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android-so:
+    name: Build libopenlist.so (arm64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.26.4"
+          cache-dependency-path: go.sum
+
+      - name: Install Android NDK
+        run: |
+          NDK_VERSION=r27
+          NDK_ZIP=android-ndk-${NDK_VERSION}-linux.zip
+          NDK_URL=https://dl.google.com/android/repository/${NDK_ZIP}
+          echo "Downloading NDK ${NDK_VERSION}..."
+          curl -fsSL -o /tmp/${NDK_ZIP} ${NDK_URL}
+          echo "Extracting..."
+          unzip -q /tmp/${NDK_ZIP} -d /opt
+          rm /tmp/${NDK_ZIP}
+          echo "ANDROID_NDK_HOME=/opt/android-ndk-${NDK_VERSION}" >> $GITHUB_ENV
+          echo "NDK installed at /opt/android-ndk-${NDK_VERSION}"
+
+      - name: Build libopenlist.so
+        run: |
+          NDK=$ANDROID_NDK_HOME
+          TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
+          TARGET=aarch64-linux-android
+          API=21
+          CC=$TOOLCHAIN/bin/${TARGET}${API}-clang
+
+          export GOOS=android
+          export GOARCH=arm64
+          export CGO_ENABLED=1
+          export CC=$CC
+          export CGO_CFLAGS="-D__ANDROID_API__=$API -I$TOOLCHAIN/sysroot/usr/include"
+          export CGO_LDFLAGS="-D__ANDROID_API__=$API"
+
+          # Ensure we use glebarez (pure Go SQLite) to minimize CGO deps
+          go build -buildmode=c-shared \
+            -ldflags="-s -w -extldflags=-Wl,-soname,libopenlist.so" \
+            -o libopenlist.so \
+            -tags glebarez \
+            ./bridge/
+
+      - name: Verify artifact
+        run: |
+          ls -lh libopenlist.so
+          file libopenlist.so
+          readelf -h libopenlist.so | grep -q "Shared object file" && echo "✓ Valid .so file"
+
+      - name: Build debug CLI for Termux
+        run: |
+          # Build a standalone ARM64 binary (no CGO) for Termux testing
+          export GOOS=android
+          export GOARCH=arm64
+          export CGO_ENABLED=0
+          go build -ldflags="-s -w" \
+            -o openlist-cli.arm64 \
+            -tags glebarez \
+            ./bridge/cmd/debug/
+
+      - name: Upload .so
+        uses: actions/upload-artifact@v7
+        with:
+          name: libopenlist-arm64
+          path: libopenlist.so
+          if-no-files-found: error
+
+      - name: Upload CLI for Termux
+        uses: actions/upload-artifact@v7
+        with:
+          name: openlist-cli-arm64
+          path: openlist-cli.arm64
+          if-no-files-found: error
