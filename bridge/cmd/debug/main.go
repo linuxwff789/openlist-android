@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -78,6 +79,14 @@ func main() {
 	// Initialize minimal config — needed by drivers/base for HTTP client
 	conf.Conf = &conf.Config{
 		TlsInsecureSkipVerify: false,
+	}
+	// Override DNS to avoid Android TUN VPN DNS breakage
+	net.DefaultResolver = &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{}
+			return d.DialContext(ctx, "udp", "8.8.8.8:53")
+		},
 	}
 
 	var drv driver.Driver
