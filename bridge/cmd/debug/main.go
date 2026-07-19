@@ -26,6 +26,7 @@ import (
 
 	// Direct driver imports — no op.GetDriver, which breaks argv on Android
 	"github.com/OpenListTeam/OpenList/v4/drivers/189"
+	"github.com/OpenListTeam/OpenList/v4/drivers/189pc"
 	"github.com/OpenListTeam/OpenList/v4/drivers/aliyundrive_open"
 	"github.com/OpenListTeam/OpenList/v4/drivers/webdav"
 
@@ -103,6 +104,9 @@ func main() {
 		drv = d
 	case "189Cloud":
 		d := &_189.Cloud189{}
+		drv = d
+	case "189CloudPC":
+		d := &_189pc.Cloud189PC{}
 		drv = d
 	case "AliyundriveOpen":
 		d := &aliyundrive_open.AliyundriveOpen{}
@@ -461,7 +465,7 @@ func showHelp() {
 Usage:
   %s <driver> <config-json> <command> [args...]
 
-Drivers: webdav, 189Cloud, aliyundrive_open
+Drivers: webdav, 189Cloud, 189CloudPC, aliyundrive_open
 
 Commands:
   list <path>                    List directory
