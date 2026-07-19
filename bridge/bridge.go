@@ -29,7 +29,7 @@ import (
 	// Import drivers for their init() registration
 	_ "github.com/OpenListTeam/OpenList/v4/drivers/189"
 	_ "github.com/OpenListTeam/OpenList/v4/drivers/aliyundrive_open"
-	_ "github.com/OpenListTeam/OpenList/v4/drivers/base"
+	"github.com/OpenListTeam/OpenList/v4/drivers/base"
 	_ "github.com/OpenListTeam/OpenList/v4/drivers/webdav"
 
 	"github.com/OpenListTeam/OpenList/v4/internal/driver"
