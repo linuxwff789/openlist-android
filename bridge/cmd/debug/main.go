@@ -444,7 +444,7 @@ func runUpload(ctx context.Context, d driver.Driver, args []string) {
 	}
 
 	if pr, ok := d.(driver.PutResult); ok {
-		obj, err := pr.Put(ctx, parent, fs, nil)
+		obj, err := pr.Put(ctx, parent, fs, func(pct float64) {})
 		if err != nil {
 			fatalf("upload: %v", err)
 		}
@@ -452,7 +452,7 @@ func runUpload(ctx context.Context, d driver.Driver, args []string) {
 		return
 	}
 	if p, ok := d.(driver.Put); ok {
-		if err := p.Put(ctx, parent, fs, nil); err != nil {
+		if err := p.Put(ctx, parent, fs, func(pct float64) {}); err != nil {
 			fatalf("upload: %v", err)
 		}
 		fmt.Println("uploaded")
