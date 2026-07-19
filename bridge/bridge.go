@@ -1,4 +1,4 @@
-package bridge
+package main
 
 /*
 #include <jni.h>
@@ -16,9 +16,9 @@ import (
 	"time"
 
 	// Import drivers for their init() registration
-	_ "github.com/OpenListTeam/OpenList/v4/drivers/webdav"
 	_ "github.com/OpenListTeam/OpenList/v4/drivers/189"
 	_ "github.com/OpenListTeam/OpenList/v4/drivers/aliyundrive_open"
+	_ "github.com/OpenListTeam/OpenList/v4/drivers/webdav"
 
 	"github.com/OpenListTeam/OpenList/v4/internal/driver"
 	"github.com/OpenListTeam/OpenList/v4/internal/errs"
@@ -617,3 +617,5 @@ func objToCloudFile(obj model.Obj) cloudFile {
 	}
 	return cf
 }
+
+func main() {}
