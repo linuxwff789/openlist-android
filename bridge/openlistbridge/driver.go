@@ -225,7 +225,7 @@ func Upload(handle, parentPath, fileName, localFilePath, mimeType string) (str s
 		Mimetype: mimeType,
 	}
 	if putResult, ok := drv.(driver.PutResult); ok {
-		obj, err := putResult.Put(ctx, parentDir, fileStream, nil)
+		obj, err := putResult.Put(ctx, parentDir, fileStream, func(pct float64) {})
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -234,8 +234,9 @@ func Upload(handle, parentPath, fileName, localFilePath, mimeType string) (str s
 		}
 		return resultJSON(map[string]string{"name": fileName})
 	}
+
 	if putter, ok := drv.(driver.Put); ok {
-		err = putter.Put(ctx, parentDir, fileStream, nil)
+		err = putter.Put(ctx, parentDir, fileStream, func(pct float64) {})
 		if err != nil {
 			return errorJSON(err)
 		}
