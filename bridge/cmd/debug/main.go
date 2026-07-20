@@ -92,7 +92,9 @@ func main() {
 	if err != nil {
 		fatalf("failed to open db: %v", err)
 	}
-	db.Init(sqlDB)
+	if err := db.Init(sqlDB); err != nil {
+		fatalf("failed to init db: %v", err)
+	}
 	// Override DNS to avoid Android TUN VPN DNS breakage
 	net.DefaultResolver = &net.Resolver{
 		PreferGo: true,
