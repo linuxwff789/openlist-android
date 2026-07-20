@@ -22,6 +22,7 @@ import (
 	"github.com/OpenListTeam/OpenList/v4/internal/driver"
 	"github.com/OpenListTeam/OpenList/v4/internal/errs"
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
+	"github.com/OpenListTeam/OpenList/v4/internal/db"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
 	"github.com/OpenListTeam/OpenList/v4/internal/stream"
@@ -55,13 +56,9 @@ func ensureInit() (err error) {
 	if err != nil {
 		return fmt.Errorf("open db: %w", err)
 	}
-	// Set global db (db.Init also does this but calls log.Fatalf on error)
-	if err = sqlDB.AutoMigrate(
-		new(model.Storage), new(model.User), new(model.Meta),
-		new(model.SettingItem), new(model.SearchNode),
-		new(model.TaskItem), new(model.SSHPublicKey), new(model.SharingDB),
-	); err != nil {
-		return fmt.Errorf("db migrate: %w", err)
+	// db.Init sets global db var + runs AutoMigrate (no longer calls log.Fatalf)
+	if err = db.Init(sqlDB); err != nil {
+		return fmt.Errorf("db init: %w", err)
 	}
 	return nil
 }
