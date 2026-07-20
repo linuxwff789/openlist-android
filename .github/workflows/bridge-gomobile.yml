@@ -23,7 +23,10 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Install gomobile
+        env:
+          GOTOOLCHAIN: go1.26.4
         run: |
+          go get -tool golang.org/x/mobile/cmd/gobind
           go install golang.org/x/mobile/cmd/gomobile@latest
           gomobile init
 
