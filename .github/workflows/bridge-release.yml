@@ -29,7 +29,7 @@ jobs:
           unzip -q /tmp/ndk.zip -d /opt
           echo "ANDROID_NDK_HOME=/opt/android-ndk-r27" >> $GITHUB_ENV
 
-      - name: Build .aar + extract .so
+      - name: Build .aar
         env:
           GOTOOLCHAIN: go1.26.4
           ANDROID_NDK_HOME: /opt/android-ndk-r27
@@ -41,9 +41,7 @@ jobs:
             -o openlistbridge.aar \
             -tags glebarez \
             ./bridge/openlistbridge/
-          unzip -o openlistbridge.aar -d aar-extracted
-          cp aar-extracted/jni/arm64-v8a/*.so libopenlist.so
-          ls -lh libopenlist.so
+          ls -lh openlistbridge.aar
 
       - name: Build CLI
         run: |
@@ -60,8 +58,14 @@ jobs:
             --notes "## OpenList Android Bridge ${{ github.ref_name }}
 
             ### Files
-            - \`libopenlist.so\` — Gomobile JNI library (place in \`jniLibs/arm64-v8a/\`)
+            - \`openlistbridge.aar\` — Gomobile AAR (Gradle dependency, contains libgojni.so + Java bindings)
             - \`openlist-cli.arm64\` — Termux debug CLI
+
+            ### Usage
+            Add to \`build.gradle.kts\`:
+            \`\`\`kotlin
+            implementation(files("libs/openlistbridge.aar"))
+            \`\`\`
 
             ### Supported drivers
             - WebDAV
@@ -69,4 +73,4 @@ jobs:
 
             ### Build
             Built with gomobile bind (Go 1.26.x)" \
-            libopenlist.so openlist-cli.arm64
+            openlistbridge.aar openlist-cli.arm64
