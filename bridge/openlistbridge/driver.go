@@ -35,6 +35,12 @@ func init() {
 			return d.DialContext(ctx, "tcp", "8.8.8.8:53")
 		},
 	}
+}
+
+func ensureInit() {
+	if base.RestyClient != nil {
+		return
+	}
 	if conf.Conf == nil {
 		conf.Conf = &conf.Config{TlsInsecureSkipVerify: false}
 	}
@@ -86,6 +92,7 @@ func errorJSON(err error) string {
 // ── Exported API ──
 
 func Create(driverType, configJSON string) string {
+	ensureInit()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -369,6 +376,7 @@ func getDrv(h string) (driver.Driver, error) {
 }
 
 func initStorage(ctx context.Context, driverName, additionJSON string) (driver.Driver, error) {
+	ensureInit()
 	driverNew, err := op.GetDriver(driverName)
 	if err != nil {
 		return nil, fmt.Errorf("unknown driver %q: %w", driverName, err)
