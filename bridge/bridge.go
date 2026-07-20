@@ -3,7 +3,6 @@ package main
 /*
 #include <jni.h>
 #include <stdlib.h>
-#include <stdlib.h>
 
 // JNI helper wrappers — Go cgo cannot call (*env)->Method directly.
 static inline jstring _go_NewStringUTF(JNIEnv* env, const char* s) {
@@ -18,7 +17,7 @@ static inline void _go_ReleaseStringUTFChars(JNIEnv* env, jstring s, const char*
 
 // Initialize GODEBUG before Go runtime starts.
 // Prevents signal handler conflicts between Go and JVM on Android.
-__attribute__((constructor)) void _go_android_init(void) {
+__attribute__((constructor)) static void _go_android_init(void) {
     setenv("GODEBUG", "asyncpreemptoff=1,inittrace=0", 1);
 }
 */
