@@ -3,6 +3,7 @@ package main
 /*
 #include <jni.h>
 #include <stdlib.h>
+#include <stdlib.h>
 
 // JNI helper wrappers — Go cgo cannot call (*env)->Method directly.
 static inline jstring _go_NewStringUTF(JNIEnv* env, const char* s) {
@@ -14,6 +15,12 @@ static inline const char* _go_GetStringUTFChars(JNIEnv* env, jstring s, jboolean
 static inline void _go_ReleaseStringUTFChars(JNIEnv* env, jstring s, const char* c) {
     (*env)->ReleaseStringUTFChars(env, s, c);
 }
+
+// Initialize GODEBUG before Go runtime starts.
+// Prevents signal handler conflicts between Go and JVM on Android.
+__attribute__((constructor)) void _go_android_init(void) {
+    setenv("GODEBUG", "asyncpreemptoff=1,inittrace=0", 1);
+}
 */
 import "C"
 
@@ -22,6 +29,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"sync"
 	"time"
@@ -43,6 +51,18 @@ import (
 )
 
 // ---- handle management ----
+
+// init runs once during library load: set up Android-compatible DNS
+func init() {
+	net.DefaultResolver = &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{Timeout: 5 * time.Second}
+			// Use public DNS; Android system DNS may not be available
+			return d.DialContext(ctx, "tcp", "8.8.8.8:53")
+		},
+	}
+}
 
 type instance struct {
 	drv     driver.Driver
@@ -93,6 +113,13 @@ func jerrorStr(env *C.JNIEnv, msg string) C.jstring {
 // ---- JNI exports ----
 // Kotlin class: com.openlist.bridge.OpenListDriver
 // JNI names: Java_com_openlist_bridge_OpenListDriver_n{Method}
+
+//export Java_com_openlist_bridge_OpenListDriver_nWarmup
+func Java_com_openlist_bridge_OpenListDriver_nWarmup(env *C.JNIEnv, clazz C.jclass) C.jstring {
+	// Minimal function to initialize Go runtime (scheduler, GC, etc.)
+	// before any complex JNI calls. Call this right after System.loadLibrary.
+	return jresult(env, map[string]string{"status": "ok"})
+}
 
 //export Java_com_openlist_bridge_OpenListDriver_nCreate
 func Java_com_openlist_bridge_OpenListDriver_nCreate(env *C.JNIEnv, clazz C.jclass, driverType, configJSON C.jstring) C.jstring {
