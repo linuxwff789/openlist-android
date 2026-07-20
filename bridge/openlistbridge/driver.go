@@ -159,7 +159,13 @@ func List(handle, path string) (str string) {
 	return resultJSON(result)
 }
 
-func GetDownloadURL(handle, path string) string {
+func GetDownloadURL(handle, path string) (str string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("PANIC in GetDownloadURL:\n%s", string(debug.Stack()))
+			str = errorJSON(fmt.Errorf("PANIC: %v", r))
+		}
+	}()
 	drv, err := getDrv(handle)
 	if err != nil {
 		return errorJSON(err)
@@ -181,7 +187,13 @@ func GetDownloadURL(handle, path string) string {
 	return resultJSON(map[string]string{"url": link.URL})
 }
 
-func Upload(handle, parentPath, fileName, localFilePath, mimeType string) string {
+func Upload(handle, parentPath, fileName, localFilePath, mimeType string) (str string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("PANIC in Upload:\n%s", string(debug.Stack()))
+			str = errorJSON(fmt.Errorf("PANIC: %v", r))
+		}
+	}()
 	drv, err := getDrv(handle)
 	if err != nil {
 		return errorJSON(err)
@@ -232,7 +244,13 @@ func Upload(handle, parentPath, fileName, localFilePath, mimeType string) string
 	return errorJSON(fmt.Errorf("driver does not support upload"))
 }
 
-func Mkdir(handle, parentPath, dirName string) string {
+func Mkdir(handle, parentPath, dirName string) (str string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("PANIC in Mkdir:\n%s", string(debug.Stack()))
+			str = errorJSON(fmt.Errorf("PANIC: %v", r))
+		}
+	}()
 	drv, err := getDrv(handle)
 	if err != nil {
 		return errorJSON(err)
@@ -261,7 +279,13 @@ func Mkdir(handle, parentPath, dirName string) string {
 	return errorJSON(fmt.Errorf("driver does not support mkdir"))
 }
 
-func Delete(handle, path string) string {
+func Delete(handle, path string) (str string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("PANIC in Delete:\n%s", string(debug.Stack()))
+			str = errorJSON(fmt.Errorf("PANIC: %v", r))
+		}
+	}()
 	drv, err := getDrv(handle)
 	if err != nil {
 		return errorJSON(err)
@@ -284,7 +308,13 @@ func Delete(handle, path string) string {
 	return resultJSON(map[string]string{"status": "deleted"})
 }
 
-func Rename(handle, path, newName string) string {
+func Rename(handle, path, newName string) (str string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("PANIC in Rename:\n%s", string(debug.Stack()))
+			str = errorJSON(fmt.Errorf("PANIC: %v", r))
+		}
+	}()
 	drv, err := getDrv(handle)
 	if err != nil {
 		return errorJSON(err)
