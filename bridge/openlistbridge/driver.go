@@ -208,6 +208,8 @@ func Upload(handle, parentPath, fileName, localFilePath, mimeType string) (str s
 	if err != nil {
 		return errorJSON(err)
 	}
+	log.Printf("upload: parentPath=%q parentID=%q fileName=%q fileSize=%d",
+		parentPath, parentDir.GetID(), fileName, fileSize)
 	f, err := os.Open(localFilePath)
 	if err != nil {
 		return errorJSON(fmt.Errorf("open file: %w", err))
