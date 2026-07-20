@@ -1,0 +1,70 @@
+name: Build Android .aar (gomobile)
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - 'bridge/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build openlistbridge.aar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: "1.22.x"
+          cache-dependency-path: go.sum
+
+      - name: Install gomobile
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          gomobile init
+
+      - name: Install Android NDK
+        run: |
+          NDK_ZIP=android-ndk-r27-linux.zip
+          curl -fsSL -o /tmp/${NDK_ZIP} https://dl.google.com/android/repository/${NDK_ZIP}
+          unzip -q /tmp/${NDK_ZIP} -d /opt
+          echo "ANDROID_NDK_HOME=/opt/android-ndk-r27" >> $GITHUB_ENV
+
+      - name: Build .aar
+        run: |
+          gomobile bind \
+            -target=android/arm64 \
+            -androidapi 26 \
+            -v \
+            -o openlistbridge.aar \
+            -tags glebarez \
+            ./bridge/openlistbridge/
+
+      - name: Verify artifact
+        run: |
+          ls -lh openlistbridge.aar
+          unzip -l openlistbridge.aar | head -20
+
+      - name: Upload .aar
+        uses: actions/upload-artifact@v7
+        with:
+          name: openlistbridge-aar
+          path: openlistbridge.aar
+          if-no-files-found: error
+
+      - name: Extract .so from .aar for direct use
+        run: |
+          unzip -o openlistbridge.aar -d aar-extracted
+          ls -lh aar-extracted/jni/arm64-v8a/
+          cp aar-extracted/jni/arm64-v8a/*.so libopenlist.so
+
+      - name: Upload .so
+        uses: actions/upload-artifact@v7
+        with:
+          name: libopenlist-arm64
+          path: libopenlist.so
+          if-no-files-found: error
