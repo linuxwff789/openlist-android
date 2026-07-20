@@ -1,6 +1,8 @@
 package db
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
@@ -10,12 +12,13 @@ import (
 
 var db *gorm.DB
 
-func Init(d *gorm.DB) {
+func Init(d *gorm.DB) error {
 	db = d
 	err := AutoMigrate(new(model.Storage), new(model.User), new(model.Meta), new(model.SettingItem), new(model.SearchNode), new(model.TaskItem), new(model.SSHPublicKey), new(model.SharingDB))
 	if err != nil {
-		log.Fatalf("failed migrate database: %s", err.Error())
+		return fmt.Errorf("migrate: %w", err)
 	}
+	return nil
 }
 
 func AutoMigrate(dst ...interface{}) error {
