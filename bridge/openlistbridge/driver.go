@@ -429,6 +429,12 @@ func initStorage(ctx context.Context, driverName, additionJSON string) (driver.D
 }
 
 func rootObj(d driver.Driver) model.Obj {
+	if getter, ok := d.(driver.GetRooter); ok {
+		ctx := context.Background()
+		if root, err := getter.GetRoot(ctx); err == nil {
+			return root
+		}
+	}
 	s := d.GetStorage()
 	return &model.Object{
 		ID:       s.MountPath,
