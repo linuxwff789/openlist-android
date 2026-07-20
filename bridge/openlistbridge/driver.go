@@ -410,6 +410,8 @@ func initStorage(ctx context.Context, driverName, additionJSON string) (driver.D
 	if err := utils.Json.UnmarshalFromString(additionJSON, storageDriver.GetAddition()); err != nil {
 		return nil, fmt.Errorf("unmarshal addition: %w", err)
 	}
+	log.Printf("initStorage: driver=%q driverNew=%v storageDriver=%v addition=%v resty=%v",
+		driverName, driverNew, storageDriver, storageDriver.GetAddition(), base.RestyClient)
 	if err := storageDriver.Init(ctx); err != nil {
 		_ = storageDriver.Drop(ctx)
 		return nil, fmt.Errorf("init: %w", err)

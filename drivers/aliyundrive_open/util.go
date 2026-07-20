@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -143,6 +144,7 @@ func (d *AliyundriveOpen) request(ctx context.Context, limitTy limiterType, uri,
 }
 
 func (d *AliyundriveOpen) requestReturnErrResp(ctx context.Context, limitTy limiterType, uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error, *ErrResp) {
+	log.Printf("ali_req: uri=%s method=%s resty=%v d.AccessToken=%q", uri, method, base.RestyClient, d.AccessToken)
 	req := base.RestyClient.R()
 	// TODO check whether access_token is expired
 	req.SetHeader("Authorization", "Bearer "+d.getAccessToken())
