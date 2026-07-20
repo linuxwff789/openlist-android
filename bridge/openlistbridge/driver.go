@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"os"
 	"runtime/debug"
@@ -95,7 +96,8 @@ func errorJSON(err error) string {
 func Create(driverType, configJSON string) (str string) {
 	defer func() {
 		if r := recover(); r != nil {
-			str = errorJSON(fmt.Errorf("PANIC: %v\n%s", r, string(debug.Stack())))
+			log.Printf("PANIC in Create:\n%s", string(debug.Stack()))
+			str = errorJSON(fmt.Errorf("PANIC: %v", r))
 		}
 	}()
 	ensureInit()
@@ -116,7 +118,7 @@ func Create(driverType, configJSON string) (str string) {
 func List(handle, path string) (str string) {
 	defer func() {
 		if r := recover(); r != nil {
-			str = errorJSON(fmt.Errorf("PANIC: %v\n%s", r, string(debug.Stack())))
+			str = errorJSON(fmt.Errorf("PANIC: %v", r))
 		}
 	}()
 	drv, err := getDrv(handle)
@@ -364,7 +366,7 @@ func Copy(handle, srcPath, dstDirPath string) string {
 func Destroy(handle string) (str string) {
 	defer func() {
 		if r := recover(); r != nil {
-			str = errorJSON(fmt.Errorf("PANIC: %v\n%s", r, string(debug.Stack())))
+			str = errorJSON(fmt.Errorf("PANIC: %v", r))
 		}
 	}()
 	instMu.Lock()
