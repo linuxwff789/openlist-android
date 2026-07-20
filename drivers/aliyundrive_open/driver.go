@@ -49,6 +49,7 @@ func (d *AliyundriveOpen) Init(ctx context.Context) error {
 		return err
 	}
 	d.DriveId = utils.Json.Get(res, d.DriveType+"_drive_id").ToString()
+	log.Printf("ali_init: DriveType=%q DriveId=%q", d.DriveType, d.DriveId)
 	userid := utils.Json.Get(res, "user_id").ToString()
 	d.limiter.free()
 	d.limiter = getLimiterForUser(userid) // Allocate a corresponding limiter for each user.
