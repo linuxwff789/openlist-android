@@ -1,4 +1,4 @@
-name: Release Android .so
+name: Release Android .so (gomobile)
 
 on:
   push:
@@ -15,22 +15,35 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version: "1.26.4"
+          go-version: "1.26.x"
           cache-dependency-path: go.sum
 
-      - name: Install NDK
+      - name: Install gomobile + NDK
+        env:
+          GOTOOLCHAIN: go1.26.4
         run: |
+          go get -tool golang.org/x/mobile/cmd/gobind
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          gomobile init
           curl -fsSL -o /tmp/ndk.zip https://dl.google.com/android/repository/android-ndk-r27-linux.zip
           unzip -q /tmp/ndk.zip -d /opt
           echo "ANDROID_NDK_HOME=/opt/android-ndk-r27" >> $GITHUB_ENV
 
-      - name: Build .so
+      - name: Build .aar + extract .so
+        env:
+          GOTOOLCHAIN: go1.26.4
+          ANDROID_NDK_HOME: /opt/android-ndk-r27
         run: |
-          NDK=$ANDROID_NDK_HOME TC=$NDK/toolchains/llvm/prebuilt/linux-x86_64
-          CC=$TC/bin/aarch64-linux-android21-clang
-          export GOOS=android GOARCH=arm64 CGO_ENABLED=1 CC=$CC
-          go build -buildmode=c-shared -ldflags="-s -w -extldflags=-Wl,-soname,libopenlist.so" \
-            -tags glebarez -o libopenlist.so ./bridge/
+          gomobile bind \
+            -target=android/arm64 \
+            -androidapi 26 \
+            -v \
+            -o openlistbridge.aar \
+            -tags glebarez \
+            ./bridge/openlistbridge/
+          unzip -o openlistbridge.aar -d aar-extracted
+          cp aar-extracted/jni/arm64-v8a/*.so libopenlist.so
+          ls -lh libopenlist.so
 
       - name: Build CLI
         run: |
@@ -47,12 +60,13 @@ jobs:
             --notes "## OpenList Android Bridge ${{ github.ref_name }}
 
             ### Files
-            - \`libopenlist.so\` — JNI native library (place in \`jniLibs/arm64-v8a/\`)
+            - \`libopenlist.so\` — Gomobile JNI library (place in \`jniLibs/arm64-v8a/\`)
             - \`openlist-cli.arm64\` — Termux debug CLI
-            - \`OpenListBridge.kt\` — Kotlin wrapper (add to your project)
 
             ### Supported drivers
             - WebDAV
-            - 189Cloud (天翼云)
-            - AliyunDrive Open (阿里云盘)" \
-            libopenlist.so openlist-cli.arm64 bridge/OpenListBridge.kt
+            - AliyunDrive Open (阿里云盘)
+
+            ### Build
+            Built with gomobile bind (Go 1.26.x)" \
+            libopenlist.so openlist-cli.arm64
