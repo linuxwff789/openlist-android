@@ -101,7 +101,7 @@ func List(handle, path string) string {
 		}
 	}
 
-	files, err := inst.List(ctx, dir, model.ListArgs{})
+	files, err := inst.List(ctx, &dir, model.ListArgs{})
 	if err != nil {
 		return errorJSON(err)
 	}
@@ -178,7 +178,7 @@ func Upload(handle, parentPath, fileName, localFilePath, mimeType string) string
 	}
 
 	if putResult, ok := inst.(driver.PutResult); ok {
-		obj, err := putResult.Put(ctx, parentDir, fileStream, nil)
+		obj, err := putResult.Put(ctx, &parentDir, fileStream, nil)
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -189,7 +189,7 @@ func Upload(handle, parentPath, fileName, localFilePath, mimeType string) string
 	}
 
 	if putter, ok := inst.(driver.Put); ok {
-		err = putter.Put(ctx, parentDir, fileStream, nil)
+		err = putter.Put(ctx, &parentDir, fileStream, nil)
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -214,7 +214,7 @@ func Mkdir(handle, parentPath, dirName string) string {
 	}
 
 	if mkdirResult, ok := inst.(driver.MkdirResult); ok {
-		obj, err := mkdirResult.MakeDir(ctx, parentDir, dirName)
+		obj, err := mkdirResult.MakeDir(ctx, &parentDir, dirName)
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -222,7 +222,7 @@ func Mkdir(handle, parentPath, dirName string) string {
 	}
 
 	if mkdir, ok := inst.(driver.Mkdir); ok {
-		err = mkdir.MakeDir(ctx, parentDir, dirName)
+		err = mkdir.MakeDir(ctx, &parentDir, dirName)
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -250,7 +250,7 @@ func Delete(handle, path string) string {
 	if !ok {
 		return errorJSON(fmt.Errorf("driver does not support delete"))
 	}
-	err = remover.Remove(ctx, obj)
+	err = remover.Remove(ctx, &obj)
 	if err != nil {
 		return errorJSON(err)
 	}
@@ -272,7 +272,7 @@ func Rename(handle, path, newName string) string {
 	}
 
 	if renameResult, ok := inst.(driver.RenameResult); ok {
-		newObj, err := renameResult.Rename(ctx, obj, newName)
+		newObj, err := renameResult.Rename(ctx, &obj, newName)
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -280,7 +280,7 @@ func Rename(handle, path, newName string) string {
 	}
 
 	if renamer, ok := inst.(driver.Rename); ok {
-		err = renamer.Rename(ctx, obj, newName)
+		err = renamer.Rename(ctx, &obj, newName)
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -309,7 +309,7 @@ func Move(handle, srcPath, dstDirPath string) string {
 	}
 
 	if moveResult, ok := inst.(driver.MoveResult); ok {
-		newObj, err := moveResult.Move(ctx, srcObj, dstDir)
+		newObj, err := moveResult.Move(ctx, srcObj, &dstDir)
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -317,7 +317,7 @@ func Move(handle, srcPath, dstDirPath string) string {
 	}
 
 	if mover, ok := inst.(driver.Move); ok {
-		err = mover.Move(ctx, srcObj, dstDir)
+		err = mover.Move(ctx, srcObj, &dstDir)
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -346,7 +346,7 @@ func Copy(handle, srcPath, dstDirPath string) string {
 	}
 
 	if copyResult, ok := inst.(driver.CopyResult); ok {
-		newObj, err := copyResult.Copy(ctx, srcObj, dstDir)
+		newObj, err := copyResult.Copy(ctx, srcObj, &dstDir)
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -354,7 +354,7 @@ func Copy(handle, srcPath, dstDirPath string) string {
 	}
 
 	if copier, ok := inst.(driver.Copy); ok {
-		err = copier.Copy(ctx, srcObj, dstDir)
+		err = copier.Copy(ctx, srcObj, &dstDir)
 		if err != nil {
 			return errorJSON(err)
 		}
@@ -438,7 +438,7 @@ func resolveDir(ctx context.Context, drv driver.Driver, dirPath string) (model.O
 	if dirPath == "/" {
 		return dir, nil
 	}
-	files, err := drv.List(ctx, dir, model.ListArgs{})
+	files, err := drv.List(ctx, &dir, model.ListArgs{})
 	if err != nil {
 		return model.Object{}, err
 	}
@@ -447,7 +447,7 @@ func resolveDir(ctx context.Context, drv driver.Driver, dirPath string) (model.O
 		found := false
 		for _, f := range files {
 			if f.GetName() == part && f.IsDir() {
-				dir = f
+				dir = modelFromObj(f)
 				found = true
 				break
 			}
@@ -455,7 +455,7 @@ func resolveDir(ctx context.Context, drv driver.Driver, dirPath string) (model.O
 		if !found {
 			return model.Object{}, fmt.Errorf("path not found: %s/%s", dirPath, part)
 		}
-		files, err = drv.List(ctx, dir, model.ListArgs{})
+		files, err = drv.List(ctx, &dir, model.ListArgs{})
 		if err != nil {
 			return model.Object{}, err
 		}
@@ -463,7 +463,7 @@ func resolveDir(ctx context.Context, drv driver.Driver, dirPath string) (model.O
 	return dir, nil
 }
 
-func getObj(ctx context.Context, drv driver.Driver, path string) (model.Object, error) {
+func getObj(ctx context.Context, drv driver.Driver, path string) (model.Obj, error) {
 	dirPath := "/"
 	name := path
 	if idx := lastSlash(path); idx >= 0 {
@@ -472,18 +472,28 @@ func getObj(ctx context.Context, drv driver.Driver, path string) (model.Object, 
 	}
 	dir, err := resolveDir(ctx, drv, dirPath)
 	if err != nil {
-		return model.Object{}, err
+		return nil, err
 	}
-	files, err := drv.List(ctx, dir, model.ListArgs{})
+	files, err := drv.List(ctx, &dir, model.ListArgs{})
 	if err != nil {
-		return model.Object{}, err
+		return nil, err
 	}
 	for _, f := range files {
 		if f.GetName() == name {
 			return f, nil
 		}
 	}
-	return model.Object{}, fmt.Errorf("not found: %s", path)
+	return nil, fmt.Errorf("not found: %s", path)
+}
+
+func modelFromObj(obj model.Obj) model.Object {
+	return model.Object{
+		ID:       obj.GetID(),
+		Name:     obj.GetName(),
+		Size:     obj.GetSize(),
+		IsDir:    obj.IsDir(),
+		Modified: obj.ModifyTime(),
+	}
 }
 
 func splitPath(p string) []string {
@@ -512,7 +522,7 @@ func lastSlash(p string) int {
 	return -1
 }
 
-func objToCloudFile(obj model.Object) cloudFile {
+func objToCloudFile(obj model.Obj) cloudFile {
 	return cloudFile{
 		ID:         obj.GetID(),
 		Name:       obj.GetName(),
