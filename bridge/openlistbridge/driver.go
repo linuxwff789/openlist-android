@@ -42,20 +42,29 @@ func init() {
 	}
 }
 
-func ensureInit() {
+func ensureInit() (err error) {
 	if base.RestyClient != nil {
-		return
+		return nil
 	}
 	if conf.Conf == nil {
 		conf.Conf = &conf.Config{TlsInsecureSkipVerify: false}
 	}
 	base.InitClient()
 	// Initialize in-memory GORM/SQLite — required by op.MustSaveDriverStorage
-	sqlDB, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	var sqlDB *gorm.DB
+	sqlDB, err = gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("failed to open db: %v", err)
+		return fmt.Errorf("open db: %w", err)
 	}
-	db.Init(sqlDB)
+	// Set global db (db.Init also does this but calls log.Fatalf on error)
+	if err = sqlDB.AutoMigrate(
+		new(model.Storage), new(model.User), new(model.Meta),
+		new(model.SettingItem), new(model.SearchNode),
+		new(model.TaskItem), new(model.SSHPublicKey), new(model.SharingDB),
+	); err != nil {
+		return fmt.Errorf("db migrate: %w", err)
+	}
+	return nil
 }
 
 var (
@@ -109,7 +118,9 @@ func Create(driverType, configJSON string) (str string) {
 			str = errorJSON(fmt.Errorf("PANIC: %v", r))
 		}
 	}()
-	ensureInit()
+	if err := ensureInit(); err != nil {
+		return errorJSON(fmt.Errorf("init: %w", err))
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
